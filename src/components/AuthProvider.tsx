@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (token && currentUser) {
         setSession({
+          token: token,
           access_token: token,
           token_type: 'bearer',
           user: currentUser,
