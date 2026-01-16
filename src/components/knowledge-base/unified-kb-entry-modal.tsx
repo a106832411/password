@@ -106,14 +106,14 @@ export function UnifiedKbEntryModal({
             const supabase = createClient();
             const { data: { session } } = await supabase.auth.getSession();
 
-            if (!session?.token) {
-               return
+            if (!session?.access_token) {
+                return
             }
 
             const response = await fetch(`${API_URL}/knowledge-base/folders`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${session.token}`,
+                    'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
