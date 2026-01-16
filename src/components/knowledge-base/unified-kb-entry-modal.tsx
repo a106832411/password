@@ -107,7 +107,7 @@ export function UnifiedKbEntryModal({
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session?.token) {
-                throw new Error('No session found');
+               return
             }
 
             const response = await fetch(`${API_URL}/knowledge-base/folders`, {
