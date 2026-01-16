@@ -246,7 +246,7 @@ export function useFileContentQuery(
         sandboxId,
         normalizedPath,
         effectiveContentType,
-        session?.token || '',
+        session?.access_token || '',
       );
     },
     enabled: Boolean(sandboxId && normalizedPath && options.enabled !== false),
@@ -392,7 +392,7 @@ export function useFilePreloader() {
 
   const preloadFiles = React.useCallback(
     async (sandboxId: string, filePaths: string[]): Promise<void> => {
-      if (!session?.token) {
+      if (!session?.access_token) {
         console.warn('Cannot preload files: No authentication token available');
         return;
       }
@@ -431,7 +431,7 @@ export function useFilePreloader() {
 
       await Promise.all(preloadPromises);
     },
-    [queryClient, session?.token],
+    [queryClient, session?.access_token],
   );
 
   return { preloadFiles };

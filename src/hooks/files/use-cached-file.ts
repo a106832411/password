@@ -108,7 +108,7 @@ export function useCachedFile<T = string>(
         isRetry: boolean = false,
       ): Promise<Response> => {
         const headers: Record<string, string> = {};
-        if (session?.token) {
+        if (session?.access_token) {
           headers['Authorization'] = `Bearer ${session.token}`;
         }
 

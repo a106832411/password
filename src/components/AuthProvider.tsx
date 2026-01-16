@@ -9,6 +9,7 @@ import { getTokenFromStorage, getCurrentUser, removeTokenFromStorage, type UserI
 
 // Custom session type that includes our JWT token
 type CustomSession = {
+  token: any;
   access_token: string;
   token_type: string;
   user: UserInfo;
