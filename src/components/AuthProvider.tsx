@@ -5,33 +5,19 @@ import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { clearUserLocalStorage } from '@/lib/utils/clear-local-storage';
+import { getTokenFromStorage, getCurrentUser, removeTokenFromStorage, type UserInfo } from '@/lib/auth/jwt';
 
-const STATIC_ACCESS_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsImtpZCI6IlJndGI5enVNdm9QMXIybVEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2Rja3d2aWZvZG13aWNlbXNqdmViLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzMjY0OTg2YS1mYjhiLTQwNDQtOWVlNC0yODFiNTcwY2U1ZTgiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY3NzUwMjM2LCJpYXQiOjE3Njc3NDY2MzYsImVtYWlsIjoiNDk4MjAwMDNAcXEuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6IjQ5ODIwMDAzQHFxLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjMyNjQ5ODZhLWZiOGItNDA0NC05ZWU0LTI4MWI1NzBjZTVlOCIsInRlcm1zX2FjY2VwdGVkX2F0IjoiMjAyNS0xMi0yNlQwMzo1OToyNC42MDRaIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoibWFnaWNsaW5rIiwidGltZXN0YW1wIjoxNzY3NzQ2NjM2fV0sInNlc3Npb25faWQiOiI3ZDY3MmRkNS04YWNlLTQ5ZDAtOTNjNC02MGIxZWM1NGEyZmUiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.m19IFMME3AdPvwAzFDLsd5QdSFeEVFo7ShX8Xy0vtbw';
-
-const staticUser: User = {
-  id: 'static-user-id',
-  aud: 'authenticated',
-  app_metadata: {},
-  user_metadata: {},
-  created_at: new Date().toISOString(),
-  email: 'static-user@example.com',
-  role: 'authenticated',
-  last_sign_in_at: new Date().toISOString(),
-};
-
-const staticSession: Session = {
-  access_token: STATIC_ACCESS_TOKEN,
-  refresh_token: 'static-refresh-token',
-  expires_in: 24 * 60 * 60,
-  token_type: 'bearer',
-  user: staticUser,
+// Custom session type that includes our JWT token
+type CustomSession = {
+  access_token: string;
+  token_type: string;
+  user: UserInfo;
 };
 
 type AuthContextType = {
   supabase: SupabaseClient;
-  session: Session | null;
-  user: User | null;
+  session: CustomSession | null;
+  user: UserInfo | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 };
@@ -40,29 +26,58 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const supabase = createClient();
-  const [session] = useState<Session | null>(staticSession);
-  const [user] = useState<User | null>(staticUser);
-  const [isLoading] = useState(false);
+  const [session, setSession] = useState<CustomSession | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Ensure the Supabase client actually holds the static session so downstream
-  // hooks that fetch access tokens do not fail in no-login mode.
+  // Load user from JWT token in localStorage
   useEffect(() => {
-    const setStaticSession = async () => {
-      try {
-        await supabase.auth.setSession({
-          access_token: STATIC_ACCESS_TOKEN,
-          refresh_token: staticSession.refresh_token,
+    const loadUser = () => {
+      const token = getTokenFromStorage();
+      const currentUser = getCurrentUser();
+
+      if (token && currentUser) {
+        setSession({
+          access_token: token,
+          token_type: 'bearer',
+          user: currentUser,
         });
-      } catch (error) {
-        console.error('Failed to set static Supabase session', error);
+        setUser(currentUser);
+      } else {
+        setSession(null);
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    loadUser();
+
+    // Listen for storage changes (login/logout in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_token') {
+        loadUser();
       }
     };
 
-    setStaticSession();
-  }, [supabase]);
+    // Also listen for custom auth-update event (same tab updates)
+    const handleAuthUpdate = () => {
+      loadUser();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-update', handleAuthUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-update', handleAuthUpdate);
+    };
+  }, []);
 
   const signOut = async () => {
+    removeTokenFromStorage();
     clearUserLocalStorage();
+    setSession(null);
+    setUser(null);
   };
 
   const value = {

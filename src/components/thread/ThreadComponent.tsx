@@ -47,12 +47,12 @@ import {
   useAgents,
 } from '@/hooks/agents/use-agents';
 import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
-import { 
-  useSelectedAgentId, 
-  useSetSelectedAgent, 
-  useInitializeFromAgents, 
-  useGetCurrentAgent, 
-  useIsSunaAgentFn 
+import {
+  useSelectedAgentId,
+  useSetSelectedAgent,
+  useInitializeFromAgents,
+  useGetCurrentAgent,
+  useIsSunaAgentFn
 } from '@/stores/agent-selection-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/threads/keys';
@@ -91,7 +91,7 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
   const storeInitializeFromAgents = useInitializeFromAgents();
   const storeGetCurrentAgent = useGetCurrentAgent();
   const storeIsSunaAgentFn = useIsSunaAgentFn();
-  
+
   const agentsQuery = useAgents({}, { enabled: isAuthenticated && !isShared });
 
   // Use conditional values based on isShared
@@ -568,6 +568,17 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
           const reason = results[0].reason;
           console.error('Failed to send message:', reason);
           pendingMessageRef.current = null;
+
+          // Handle 401 Unauthorized
+          if (reason?.status === 401 || (reason?.message && reason.message.includes('Authentication error'))) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('jwtToken');
+              localStorage.removeItem('refreshToken');
+              window.location.href = '/login';
+            }
+            return;
+          }
+
           throw new Error(
             `Failed to send message: ${reason?.message || reason}`,
           );
@@ -577,6 +588,16 @@ export function ThreadComponent({ projectId, threadId, compact = false, configur
           const error = results[1].reason;
           console.error('Failed to start agent:', error);
           pendingMessageRef.current = null;
+
+          // Handle 401 Unauthorized
+          if (error?.status === 401 || (error?.message && error.message.includes('Authentication error'))) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('jwtToken');
+              localStorage.removeItem('refreshToken');
+              window.location.href = '/login';
+            }
+            return;
+          }
 
           if (error instanceof BillingError) {
             openBillingModal(error);

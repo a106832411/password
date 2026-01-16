@@ -73,7 +73,7 @@ function ResetPasswordContent() {
 
                   <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
                     <Link
-                      href="/auth"
+                      href="/login"
                       className="flex h-12 items-center justify-center w-full text-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md"
                     >
                       Go to sign in
@@ -98,7 +98,7 @@ function ResetPasswordContent() {
             {/* Header content */}
             <div className="relative z-10 pt-24 pb-8 max-w-md mx-auto h-full w-full flex flex-col gap-2 items-center justify-center">
               <Link
-                href="/auth"
+                href="/login"
                 className="group border border-border/50 bg-background hover:bg-accent/20 rounded-full text-sm h-8 px-3 flex items-center gap-2 transition-all duration-200 shadow-sm mb-6"
               >
                 <ArrowLeft className="h-4 w-4 text-muted-foreground" />
@@ -165,7 +165,7 @@ function ResetPasswordContent() {
               {errorMessage && (
                 <div className="mt-6 flex justify-center">
                   <Link
-                    href="/auth"
+                    href="/login"
                     className="flex h-12 px-6 items-center justify-center text-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md"
                   >
                     Return to sign in

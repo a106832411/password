@@ -76,7 +76,7 @@ export default function SubscriptionRequiredPage() {
     const supabase = createClient();
     await supabase.auth.signOut();
     clearUserLocalStorage();
-    router.push('/auth');
+    router.push('/login');
   };
 
   // Show skeleton immediately for FCP instead of blocking loader

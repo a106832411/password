@@ -16,27 +16,27 @@ import { useIsMobile } from '@/hooks/utils';
 import { AppProviders } from '@/components/layout/app-providers';
 
 // Lazy load heavy components that aren't needed for initial render
-const FloatingMobileMenuButton = lazy(() => 
+const FloatingMobileMenuButton = lazy(() =>
   import('@/components/sidebar/sidebar-left').then(mod => ({ default: mod.FloatingMobileMenuButton }))
 );
-const MaintenancePage = lazy(() => 
+const MaintenancePage = lazy(() =>
   import('@/components/maintenance/maintenance-page').then(mod => ({ default: mod.MaintenancePage }))
 );
-const StatusOverlay = lazy(() => 
+const StatusOverlay = lazy(() =>
   import('@/components/ui/status-overlay').then(mod => ({ default: mod.StatusOverlay }))
 );
-const PresentationViewerWrapper = lazy(() => 
+const PresentationViewerWrapper = lazy(() =>
   import('@/stores/presentation-viewer-store').then(mod => ({ default: mod.PresentationViewerWrapper }))
 );
 
-const OnboardingProvider = lazy(() => 
+const OnboardingProvider = lazy(() =>
   import('@/components/onboarding/onboarding-provider').then(mod => ({ default: mod.OnboardingProvider }))
 );
-const WelcomeBonusBanner = lazy(() => 
+const WelcomeBonusBanner = lazy(() =>
   import('@/components/billing/welcome-bonus-banner').then(mod => ({ default: mod.WelcomeBonusBanner }))
 );
 
-const PresenceDebug = lazy(() => 
+const PresenceDebug = lazy(() =>
   import('@/components/debug/presence-debug').then(mod => ({ default: mod.PresenceDebug }))
 );
 
@@ -78,9 +78,9 @@ export default function DashboardLayoutContent({
   const { user, isLoading } = useAuth();
   const params = useParams();
   const threadId = params?.threadId as string | undefined;
-  
+
   usePresence(threadId);
-  
+
   const { data: accounts } = useAccounts({ enabled: !!user });
   const personalAccount = accounts?.find((account) => account.personal_account);
   const router = useRouter();
@@ -113,7 +113,7 @@ export default function DashboardLayoutContent({
   // Check authentication status
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/auth');
+      router.push('/login');
     }
   }, [user, isLoading, router]);
 
@@ -150,7 +150,7 @@ export default function DashboardLayoutContent({
   }
 
   return (
-    <AppProviders 
+    <AppProviders
       showSidebar={true}
       sidebarSiblings={
         <Suspense fallback={null}>
@@ -166,7 +166,7 @@ export default function DashboardLayoutContent({
         {/* <Suspense fallback={null}>
           <WelcomeBonusBanner />
         </Suspense> */}
-        
+
         <Suspense fallback={null}>
           <OnboardingProvider>
             {mantenanceBanner}

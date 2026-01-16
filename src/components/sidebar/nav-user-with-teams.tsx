@@ -184,7 +184,7 @@ export function NavUserWithTeams({
     await supabase.auth.signOut();
     // Clear local storage after sign out
     clearUserLocalStorage();
-    router.push('/auth');
+    router.push('/login');
   };
 
   const getInitials = (name: string) => {

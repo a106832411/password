@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { isAuthenticatedRequest } from '@/lib/auth/middleware';
 import { locales, defaultLocale, type Locale } from '@/i18n/config';
 import { detectBestLocaleFromHeaders } from '@/lib/utils/geo-detection-server';
 
@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
   '/auth/signup',
   '/auth/forgot-password',
   '/auth/reset-password',
+  '/login', // Login page
   '/legal',
   '/api/auth',
   '/share', // Shared content should be public
@@ -34,14 +35,21 @@ const PUBLIC_ROUTES = [
   '/help', // Help center and documentation should be public
   '/credits-explained', // Credits explained page should be public
   '/agents-101',
-  '/dashboard',
-  '/agents',
-  '/projects',
-  '/settings',
   // Add locale routes for marketing pages
   ...locales.flatMap((locale) =>
     MARKETING_ROUTES.map((route) => `/${locale}${route === '/' ? '' : route}`),
   ),
+];
+
+// Routes that require authentication - will redirect to /login if not authenticated
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/agents',
+  '/projects',
+  '/settings',
+  '/subscription',
+  '/billing',
+  '/profile',
 ];
 
 export async function middleware(request: NextRequest) {
@@ -127,7 +135,7 @@ export async function middleware(request: NextRequest) {
   // 基于地理检测对营销页面进行自动重定向
   // 仅在以下情况下重定向：
   // 1. 用户访问的是没有语言前缀的营销页面
-  // 2. 用户没有显式偏好（无 cookie，无用户元数据）
+  // 2. 用户没有显式偏好（无 cookie）
   // 3. 检测到的语言不是默认语言（中文）
   if (
     isMarketingRoute &&
@@ -138,50 +146,12 @@ export async function middleware(request: NextRequest) {
     const hasExplicitPreference =
       !!localeCookie && locales.includes(localeCookie as Locale);
 
-    // Check user metadata (if authenticated) - only if no cookie preference
-    let userLocale: Locale | null = null;
+    // Only auto-redirect if no explicit preference and detected locale is not default
     if (!hasExplicitPreference) {
-      try {
-        const supabase = createServerClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            cookies: {
-              getAll() {
-                return request.cookies.getAll();
-              },
-              setAll() {
-                // No-op for middleware
-              },
-            },
-          },
-        );
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (
-          user?.user_metadata?.locale &&
-          locales.includes(user.user_metadata.locale as Locale)
-        ) {
-          userLocale = user.user_metadata.locale as Locale;
-        }
-      } catch (error) {
-        // User might not be authenticated, continue with geo-detection
-      }
-    }
-
-    // Only auto-redirect if:
-    // - No explicit preference (no cookie, no user metadata)
-    // - Detected locale is not English (default)
-    // This prevents unnecessary redirects for English speakers and users with preferences
-    if (!hasExplicitPreference && !userLocale) {
       const acceptLanguage = request.headers.get('accept-language');
-
       const detectedLocale = detectBestLocaleFromHeaders(acceptLanguage);
 
-      // Only redirect if detected locale is not English (default)
-      // This prevents unnecessary redirects for English speakers
+      // Only redirect if detected locale is not default
       if (detectedLocale !== defaultLocale) {
         const redirectUrl = new URL(request.url);
         redirectUrl.pathname = `/${detectedLocale}${pathname === '/' ? '' : pathname}`;
@@ -207,7 +177,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Bypass authentication and allow all other routes
+  // Check if route requires authentication
+  const isProtectedRoute = PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/'),
+  );
+
+  if (isProtectedRoute) {
+    // Check if user is authenticated
+    const isAuthenticated = isAuthenticatedRequest(request);
+
+    if (!isAuthenticated) {
+      // Redirect to login page with return URL
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('returnUrl', pathname);
+
+      console.log('🔒 Redirecting unauthenticated user to /login');
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // Allow all other routes
   return NextResponse.next();
 }
 

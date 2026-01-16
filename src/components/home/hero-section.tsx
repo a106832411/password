@@ -2,7 +2,7 @@
 import { siteConfig } from '@/lib/site-config';
 import { AnimatedBg } from '@/components/ui/animated-bg';
 import { useIsMobile } from '@/hooks/utils';
-import { useState, useEffect, useRef, FormEvent, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, FormEvent, lazy, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
@@ -126,33 +126,8 @@ export function HeroSection() {
     // Auth dialog state
     const [authDialogOpen, setAuthDialogOpen] = useState(false);
 
-    useEffect(() => {
-        if (authDialogOpen && inputValue.trim()) {
-            localStorage.setItem(PENDING_PROMPT_KEY, inputValue.trim());
-        }
-    }, [authDialogOpen, inputValue]);
-
-    useEffect(() => {
-        if (authDialogOpen && user && !isLoading) {
-            setAuthDialogOpen(false);
-            router.push('/dashboard');
-        }
-    }, [user, isLoading, authDialogOpen, router]);
-
-    useEffect(() => {
-        if (threadQuery.data && initiatedThreadId) {
-            const thread = threadQuery.data;
-            if (thread.project_id) {
-                router.push(`/projects/${thread.project_id}/thread/${initiatedThreadId}`);
-            } else {
-                router.push(`/agents/${initiatedThreadId}`);
-            }
-            setInitiatedThreadId(null);
-        }
-    }, [threadQuery.data, initiatedThreadId, router]);
-
-    // Handle ChatInput submission
-    const handleChatInputSubmit = async (
+    // Handle ChatInput submission - using useCallback to safely use in useEffect dependencies
+    const handleChatInputSubmit = useCallback(async (
         message: string,
         options?: { model_name?: string; enable_thinking?: boolean }
     ) => {
@@ -212,6 +187,11 @@ export function HeroSection() {
                     runningThreadIds: running_thread_ids,
                 });
                 setShowAgentLimitDialog(true);
+            } else if (error.status === 401 || (error.message && error.message.includes('Authentication error'))) {
+                // Handle 401 Unauthorized - clear auth state and redirect to login
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('refreshToken');
+                router.push('/login');
             } else {
                 const isConnectionError =
                     error instanceof TypeError &&
@@ -225,7 +205,41 @@ export function HeroSection() {
         } finally {
             setIsSubmitting(false);
         }
-    };
+    }, [selectedAgentId, initiateAgentMutation, isSubmitting, user, isLoading, router]);
+
+    useEffect(() => {
+        if (authDialogOpen && inputValue.trim()) {
+            localStorage.setItem(PENDING_PROMPT_KEY, inputValue.trim());
+        }
+    }, [authDialogOpen, inputValue]);
+
+    useEffect(() => {
+        if (authDialogOpen && user && !isLoading) {
+            setAuthDialogOpen(false);
+
+            // Check if there's a pending prompt to submit
+            const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
+            if (pendingPrompt && pendingPrompt.trim()) {
+                // Auto-submit the saved prompt
+                handleChatInputSubmit(pendingPrompt.trim());
+            } else {
+                // No pending prompt, just navigate to dashboard
+                router.push('/dashboard');
+            }
+        }
+    }, [user, isLoading, authDialogOpen, router, handleChatInputSubmit]);
+
+    useEffect(() => {
+        if (threadQuery.data && initiatedThreadId) {
+            const thread = threadQuery.data;
+            if (thread.project_id) {
+                router.push(`/projects/${thread.project_id}/thread/${initiatedThreadId}`);
+            } else {
+                router.push(`/agents/${initiatedThreadId}`);
+            }
+            setInitiatedThreadId(null);
+        }
+    }, [threadQuery.data, initiatedThreadId, router]);
 
     return (
         <section id="hero" className="w-full relative overflow-hidden">
@@ -381,7 +395,7 @@ export function HeroSection() {
                     {/* Sign in options */}
                     <div className="space-y-3">
                         <Link
-                            href={`/auth`}
+                            href={`/login`}
                             className="flex h-12 items-center justify-center w-full text-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-sm font-medium"
                             onClick={() => setAuthDialogOpen(false)}
                         >
@@ -389,7 +403,7 @@ export function HeroSection() {
                         </Link>
 
                         <Link
-                            href={`/auth`}
+                            href={`/login?tab=register`}
                             className="flex h-12 items-center justify-center w-full text-center rounded-full border border-border bg-background hover:bg-accent/50 transition-all font-medium"
                             onClick={() => setAuthDialogOpen(false)}
                         >

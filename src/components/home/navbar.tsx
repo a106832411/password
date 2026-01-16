@@ -168,7 +168,7 @@ export function Navbar({ tabs }: NavbarProps = {}) {
                       {formattedStars}
                     </span> */}
                   </Link>
-                  {user ? (
+                  {/* {user ? (
                     <Button
                       asChild
                       variant="default"
@@ -176,7 +176,7 @@ export function Navbar({ tabs }: NavbarProps = {}) {
                       className="w-fit flex items-center justify-center gap-2 bg-primary text-primary-foreground shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                     >
                       <Link href="/dashboard">
-                        Dashboard
+                        进入对话
                       </Link>
                     </Button>
                   ) : (
@@ -186,11 +186,11 @@ export function Navbar({ tabs }: NavbarProps = {}) {
                       size="sm"
                       className="w-fit flex items-center justify-center gap-2 bg-primary text-primary-foreground shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                     >
-                      <Link href="/auth">
-                        {t('tryFree')}
+                      <Link href="/login">
+                        登录
                       </Link>
                     </Button>
-                  )}
+                  )} */}
                 </div>
                 {/* <ThemeToggle /> */}
               </div>
@@ -305,7 +305,7 @@ export function Navbar({ tabs }: NavbarProps = {}) {
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                     >
                       <Link href="/dashboard">
-                        Dashboard
+                        进入控制台
                       </Link>
                     </Button>
                   ) : (
@@ -315,8 +315,8 @@ export function Navbar({ tabs }: NavbarProps = {}) {
                       size="sm"
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground shadow-[inset_0_1px_2px_rgba(255,255,255,0.25),0_3px_3px_-1.5px_rgba(16,24,40,0.06),0_1px_1px_rgba(16,24,40,0.08)] border border-white/[0.12]"
                     >
-                      <Link href="/auth">
-                        {t('tryFree')}
+                      <Link href="/login">
+                        登录
                       </Link>
                     </Button>
                   )}

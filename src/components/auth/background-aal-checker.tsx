@@ -21,15 +21,15 @@ interface BackgroundAALCheckerProps {
  * 
  * Does NOT show loading states or block the UI - runs entirely in background.
  */
-export function BackgroundAALChecker({ 
-  children, 
+export function BackgroundAALChecker({
+  children,
   redirectTo = '/auth/phone-verification',
-  enabled = true 
+  enabled = true
 }: BackgroundAALCheckerProps) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Only run queries if user is authenticated and check is enabled
   const { data: aalData } = useGetAAL();
 
@@ -40,11 +40,11 @@ export function BackgroundAALChecker({
 
       // Only redirect if the user is trying to access protected routes
       // Allow users to stay on the home page "/" even if phone verification fails
-      const isProtectedRoute = pathname.startsWith('/dashboard') || 
-                              pathname.startsWith('/agents') || 
-                              pathname.startsWith('/projects') ||
-                              pathname.startsWith('/settings');
-      
+      const isProtectedRoute = pathname.startsWith('/dashboard') ||
+        pathname.startsWith('/agents') ||
+        pathname.startsWith('/projects') ||
+        pathname.startsWith('/settings');
+
       if (!isProtectedRoute) {
         return;
       }
@@ -67,16 +67,16 @@ export function BackgroundAALChecker({
             router.push(redirectTo);
           }
           break;
-        
+
         case 'reauthenticate':
           // User has stale JWT due to MFA changes, force reauthentication
-          router.push('/auth?message=Please sign in again due to security changes');
+          router.push('/login?message=Please sign in again due to security changes');
           break;
-        
+
         case 'none':
           // No action required, user can proceed
           break;
-        
+
         case 'unknown':
         default:
           // Unknown AAL state, log and allow access (fail open)

@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
   AgentRunLimitError,
   ProjectLimitError,
@@ -269,6 +270,18 @@ export const handleApiError = (error: any, context?: ErrorContext): void => {
       description: 'Our team has been notified and is working on a fix.',
       duration: 6000,
     });
+  } else if (error?.status === 401) {
+    // Handle authentication errors - redirect to login
+    toast.error(formattedMessage, {
+      description: 'Your session has expired. Please sign in again.',
+      duration: 5000,
+    });
+    // Redirect to login page after a short delay to allow user to see the toast
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }, 1000);
   } else if (error?.status === 403) {
     toast.error(formattedMessage, {
       description: 'Contact support if you believe this is an error.',
