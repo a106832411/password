@@ -133,10 +133,10 @@ export function HeroSection() {
     ) => {
         if ((!message.trim() && !chatInputRef.current?.getPendingFiles().length) || isSubmitting) return;
 
-        // If user is not logged in, save prompt and show auth dialog
+        // If user is not logged in, redirect to login page directly
         if (!user && !isLoading) {
             localStorage.setItem(PENDING_PROMPT_KEY, message.trim());
-            setAuthDialogOpen(true);
+            router.push('/login');
             return;
         }
 
