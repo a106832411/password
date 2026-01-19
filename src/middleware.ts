@@ -50,6 +50,7 @@ const PROTECTED_ROUTES = [
   '/subscription',
   '/billing',
   '/profile',
+  '/login',
 ];
 
 export async function middleware(request: NextRequest) {

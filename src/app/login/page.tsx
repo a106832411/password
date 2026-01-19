@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,14 @@ import { toast } from 'sonner';
 type LoginMethod = 'password' | 'code';
 
 export default function LoginPage() {
+    return (
+        <Suspense fallback={null}>
+            <LoginContent />
+        </Suspense>
+    );
+}
+
+function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, isLoading } = useAuth();
